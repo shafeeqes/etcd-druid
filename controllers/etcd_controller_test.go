@@ -1573,6 +1573,8 @@ func validateEtcdWithDefaults(s *appsv1.StatefulSet, cm *corev1.ConfigMap, svc *
 								"--insecure-skip-tls-verify=true":                Equal("--insecure-skip-tls-verify=true"),
 								"--etcd-connection-timeout=5m":                   Equal("--etcd-connection-timeout=5m"),
 								"--snapstore-temp-directory=/var/etcd/data/temp": Equal("--snapstore-temp-directory=/var/etcd/data/temp"),
+								"--etcd-pid-command=ps ax -o pid,comm | grep 'etcd$' | awk '{print $1}' | { grep -Eo '[0-9]{1,}' || true; }": Equal("--etcd-pid-command=ps ax -o pid,comm | grep 'etcd$' | awk '{print $1}' | { grep -Eo '[0-9]{1,}' || true; }"),
+
 								fmt.Sprintf("--delta-snapshot-memory-limit=%d", deltaSnapShotMemLimit.Value()):                 Equal(fmt.Sprintf("--delta-snapshot-memory-limit=%d", deltaSnapShotMemLimit.Value())),
 								fmt.Sprintf("--garbage-collection-policy=%s", druidv1alpha1.GarbageCollectionPolicyLimitBased): Equal(fmt.Sprintf("--garbage-collection-policy=%s", druidv1alpha1.GarbageCollectionPolicyLimitBased)),
 								fmt.Sprintf("--endpoints=http://%s-local:%d", instance.Name, clientPort):                       Equal(fmt.Sprintf("--endpoints=http://%s-local:%d", instance.Name, clientPort)),
@@ -1625,8 +1627,16 @@ func validateEtcdWithDefaults(s *appsv1.StatefulSet, cm *corev1.ConfigMap, svc *
 									})),
 								}),
 							}),
+							"SecurityContext": PointTo(MatchFields(IgnoreExtras, Fields{
+								"Capabilities": PointTo(MatchFields(IgnoreExtras, Fields{
+									"Add": ConsistOf([]corev1.Capability{
+										"SYS_PTRACE",
+									}),
+								})),
+							})),
 						}),
 					}),
+					"ShareProcessNamespace": Equal(pointer.BoolPtr(true)),
 					"Volumes": MatchAllElements(volumeIterator, Elements{
 						"etcd-config-file": MatchFields(IgnoreExtras, Fields{
 							"Name": Equal("etcd-config-file"),
@@ -1948,7 +1958,8 @@ func validateEtcd(s *appsv1.StatefulSet, cm *corev1.ConfigMap, svc *corev1.Servi
 								"--insecure-transport=false":                     Equal("--insecure-transport=false"),
 								"--insecure-skip-tls-verify=false":               Equal("--insecure-skip-tls-verify=false"),
 								"--snapstore-temp-directory=/var/etcd/data/temp": Equal("--snapstore-temp-directory=/var/etcd/data/temp"),
-								"--etcd-connection-timeout=5m":                   Equal("--etcd-connection-timeout=5m"),
+								"--etcd-pid-command=ps ax -o pid,comm | grep 'etcd$' | awk '{print $1}' | { grep -Eo '[0-9]{1,}' || true; }": Equal("--etcd-pid-command=ps ax -o pid,comm | grep 'etcd$' | awk '{print $1}' | { grep -Eo '[0-9]{1,}' || true; }"),
+								"--etcd-connection-timeout=5m": Equal("--etcd-connection-timeout=5m"),
 								fmt.Sprintf("--defragmentation-schedule=%s", *instance.Spec.Etcd.DefragmentationSchedule):                           Equal(fmt.Sprintf("--defragmentation-schedule=%s", *instance.Spec.Etcd.DefragmentationSchedule)),
 								fmt.Sprintf("--schedule=%s", *instance.Spec.Backup.FullSnapshotSchedule):                                            Equal(fmt.Sprintf("--schedule=%s", *instance.Spec.Backup.FullSnapshotSchedule)),
 								fmt.Sprintf("%s=%s", "--garbage-collection-policy", *instance.Spec.Backup.GarbageCollectionPolicy):                  Equal(fmt.Sprintf("%s=%s", "--garbage-collection-policy", *instance.Spec.Backup.GarbageCollectionPolicy)),
@@ -2024,8 +2035,16 @@ func validateEtcd(s *appsv1.StatefulSet, cm *corev1.ConfigMap, svc *corev1.Servi
 									})),
 								}),
 							}),
+							"SecurityContext": PointTo(MatchFields(IgnoreExtras, Fields{
+								"Capabilities": PointTo(MatchFields(IgnoreExtras, Fields{
+									"Add": ConsistOf([]corev1.Capability{
+										"SYS_PTRACE",
+									}),
+								})),
+							})),
 						}),
 					}),
+					"ShareProcessNamespace": Equal(pointer.BoolPtr(true)),
 					"Volumes": MatchAllElements(volumeIterator, Elements{
 						"etcd-config-file": MatchFields(IgnoreExtras, Fields{
 							"Name": Equal("etcd-config-file"),
