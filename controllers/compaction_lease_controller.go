@@ -38,6 +38,7 @@ import (
 	druidv1alpha1 "github.com/gardener/etcd-druid/api/v1alpha1"
 	controllersconfig "github.com/gardener/etcd-druid/controllers/config"
 	"github.com/gardener/etcd-druid/pkg/common"
+	"github.com/gardener/etcd-druid/pkg/features"
 	druidpredicates "github.com/gardener/etcd-druid/pkg/predicate"
 	"github.com/gardener/etcd-druid/pkg/utils"
 	"github.com/gardener/gardener/pkg/utils/imagevector"
@@ -173,21 +174,22 @@ func (lc *CompactionLeaseController) reconcileJob(ctx context.Context, logger lo
 
 	// First check if a job is already running
 	job := &batchv1.Job{}
-	err := lc.Get(ctx, types.NamespacedName{Name: getJobName(etcd), Namespace: etcd.Namespace}, job)
-
-	if err != nil {
+	if err := lc.Get(ctx, types.NamespacedName{Name: getJobName(etcd), Namespace: etcd.Namespace}, job); err != nil {
 		if !errors.IsNotFound(err) {
 			return ctrl.Result{
 				RequeueAfter: 10 * time.Second,
 			}, fmt.Errorf("error while fetching compaction job: %v", err)
 		}
-		// Required job doesn't exist. Create new
-		job, err = lc.createCompactJob(ctx, logger, etcd)
-		logger.Info("Job Creation")
-		if err != nil {
-			return ctrl.Result{
-				RequeueAfter: 10 * time.Second,
-			}, fmt.Errorf("error during compaction job creation: %v", err)
+
+		if features.FeatureGate.Enabled(features.BackupCompaction) {
+			// Required job doesn't exist. Create new
+			job, err = lc.createCompactJob(ctx, logger, etcd)
+			logger.Info("Job Creation")
+			if err != nil {
+				return ctrl.Result{
+					RequeueAfter: 10 * time.Second,
+				}, fmt.Errorf("error during compaction job creation: %v", err)
+			}
 		}
 	}
 
@@ -195,12 +197,12 @@ func (lc *CompactionLeaseController) reconcileJob(ctx context.Context, logger lo
 
 	// Delete job and requeue if the job failed
 	if job.Status.Failed > 0 {
-		err = lc.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationForeground))
-		if err != nil {
+		if err := lc.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationForeground)); client.IgnoreNotFound(err) != nil {
 			return ctrl.Result{
 				RequeueAfter: 10 * time.Second,
 			}, fmt.Errorf("error while deleting failed compaction job: %v", err)
 		}
+
 		return ctrl.Result{
 			RequeueAfter: 10 * time.Second,
 		}, nil

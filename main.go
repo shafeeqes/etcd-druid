@@ -20,6 +20,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/pflag"
+
+	"github.com/gardener/etcd-druid/pkg/features"
+
 	druidv1alpha1 "github.com/gardener/etcd-druid/api/v1alpha1"
 	"github.com/gardener/etcd-druid/controllers"
 	controllersconfig "github.com/gardener/etcd-druid/controllers/config"
@@ -44,6 +48,8 @@ var (
 func init() {
 	utilruntime.Must(schemev1.AddToScheme(scheme))
 	utilruntime.Must(druidv1alpha1.AddToScheme(scheme))
+
+	features.RegisterFeatureGates()
 
 	// +kubebuilder:scaffold:scheme
 }
@@ -88,8 +94,10 @@ func main() {
 	flag.BoolVar(&disableLeaseCache, "disable-lease-cache", false, "Disable cache for lease.coordination.k8s.io resources.")
 	flag.BoolVar(&ignoreOperationAnnotation, "ignore-operation-annotation", true, "Ignore the operation annotation or not.")
 	flag.DurationVar(&etcdMemberNotReadyThreshold, "etcd-member-notready-threshold", 5*time.Minute, "Threshold after which an etcd member is considered not ready if the status was unknown before.")
+	features.FeatureGate.AddFlag(pflag.CommandLine)
 
-	flag.Parse()
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 

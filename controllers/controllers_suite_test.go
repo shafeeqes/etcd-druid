@@ -23,6 +23,7 @@ import (
 
 	druidv1alpha1 "github.com/gardener/etcd-druid/api/v1alpha1"
 	controllersconfig "github.com/gardener/etcd-druid/controllers/config"
+	"github.com/gardener/etcd-druid/pkg/features"
 
 	"github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/onsi/ginkgo"
@@ -67,6 +68,9 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
+	features.RegisterFeatureGates()
+	Expect(features.FeatureGate.SetFromMap(map[string]bool{"BackupCompaction": true})).To(Succeed())
+
 	mgrCtx, mgrCancel = context.WithCancel(context.Background())
 	var err error
 	//logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))

@@ -13,3 +13,35 @@
 // limitations under the License.
 
 package features
+
+import (
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/component-base/featuregate"
+)
+
+const (
+	// Every feature gate should add method here following this template:
+	//
+	// // MyFeature enable Foo.
+	// // owner: @username
+	// // alpha: v0.5.X
+	// MyFeature featuregate.Feature = "MyFeature"
+
+	// BackupCompaction enables an event count based compaction for etcd backups.
+	// owner @abdasgupta, @timuthy
+	// alpha: v0.7.0
+	BackupCompaction featuregate.Feature = "BackupCompaction"
+)
+
+var (
+	// FeatureGate is a shared global FeatureGate for Etcd-Druid flags.
+	FeatureGate  = featuregate.NewFeatureGate()
+	featureGates = map[featuregate.Feature]featuregate.FeatureSpec{
+		BackupCompaction: {Default: false, PreRelease: featuregate.Alpha},
+	}
+)
+
+// RegisterFeatureGates registers the feature gates of Etcd-Druid.
+func RegisterFeatureGates() {
+	utilruntime.Must(FeatureGate.Add(featureGates))
+}
