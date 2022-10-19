@@ -394,7 +394,8 @@ func (r *EtcdReconciler) reconcileServiceAccount(ctx context.Context, logger log
 	decoded := &corev1.ServiceAccount{}
 	serviceAccountPath := getChartPathForServiceAccount()
 	chartPath := getChartPath()
-	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values)
+	// TODO: .Render is deprecated. Refactor or adapt code to use RenderEmbeddedFS https://github.com/gardener/gardener/pull/6165
+	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values) //nolint:staticcheck
 	if err != nil {
 		return err
 	}
@@ -447,7 +448,8 @@ func (r *EtcdReconciler) reconcileRole(ctx context.Context, logger logr.Logger, 
 	decoded := &rbac.Role{}
 	rolePath := getChartPathForRole()
 	chartPath := getChartPath()
-	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values)
+	// TODO: .Render is deprecated. Refactor or adapt code to use RenderEmbeddedFS https://github.com/gardener/gardener/pull/6165
+	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values) //nolint:staticcheck
 	if err != nil {
 		return err
 	}
@@ -488,7 +490,8 @@ func (r *EtcdReconciler) reconcileRoleBinding(ctx context.Context, logger logr.L
 	decoded := &rbac.RoleBinding{}
 	roleBindingPath := getChartPathForRoleBinding()
 	chartPath := getChartPath()
-	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values)
+	// TODO: .Render is deprecated. Refactor or adapt code to use RenderEmbeddedFS https://github.com/gardener/gardener/pull/6165
+	renderedChart, err := r.chartApplier.Render(chartPath, etcd.Name, etcd.Namespace, values) //nolint:staticcheck
 	if err != nil {
 		return err
 	}
