@@ -35,8 +35,8 @@ include $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/tools.mk
 
 .PHONY: revendor
 revendor:
-	@env GO111MODULE=on go mod vendor
 	@env GO111MODULE=on go mod tidy
+	@env GO111MODULE=on go mod vendor
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/"*
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/"*
 	@"$(REPO_ROOT)/hack/update-github-templates.sh"
