@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # Image URL to use all building/pushing image targets
+GARDENER_HACK_DIR   := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 VERSION             := $(shell cat VERSION)
 REPO_ROOT           := $(shell dirname "$(realpath $(lastword $(MAKEFILE_LIST)))")
 REGISTRY            := eu.gcr.io/gardener-project/gardener
@@ -31,27 +32,13 @@ IMG ?= ${IMAGE_REPOSITORY}:${IMAGE_BUILD_TAG}
 
 TOOLS_DIR := hack/tools
 include $(REPO_ROOT)/hack/tools.mk
-include $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/tools.mk
+include $(GARDENER_HACK_DIR)/tools.mk
 
 
-.PHONY: set-permissions
-set-permissions:
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-crds.sh"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/vgopath-setup.sh"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/set_dependency_version"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/component_descriptor"
-	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/prepare_release"
-
-.PHONY: revendor
-revendor: set-permissions
-	@env GO111MODULE=on go mod tidy
-	@env GO111MODULE=on go mod vendor
-	@"$(REPO_ROOT)/hack/update-github-templates.sh"
-	@make set-permissions
-
+.PHONY: tidy
+tidy:
+	@GO111MODULE=on go mod tidy
+	@mkdir -p $(REPO_ROOT)/.ci/hack && cp $(GARDENER_HACK_DIR)/.ci/* $(REPO_ROOT)/.ci/hack/ && chmod +xw $(REPO_ROOT)/.ci/hack/*
 
 kind-up kind-down ci-e2e-kind deploy-localstack test-e2e: export KUBECONFIG = $(KUBECONFIG_PATH)
 
@@ -87,7 +74,7 @@ deploy: $(SKAFFOLD) $(HELM)
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
 manifests: $(VGOPATH) $(CONTROLLER_GEN)
-	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) go generate ./config/crd/bases
+	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) go generate ./config/crd/bases
 	@find "$(REPO_ROOT)/config/crd/bases" -name "*.yaml" -exec cp '{}' "$(REPO_ROOT)/charts/druid/charts/crds/templates/" \;
 	@controller-gen rbac:roleName=manager-role paths="./controllers/..."
 
