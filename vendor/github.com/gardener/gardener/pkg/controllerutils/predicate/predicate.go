@@ -160,12 +160,13 @@ func LastOperationChanged(getLastOperation func(client.Object) *gardencorev1beta
 			// so if the oldObject doesn't have the same annotation, don't enqueue it.
 			if v1beta1helper.HasOperationAnnotation(e.ObjectNew.GetAnnotations()) {
 				operation := e.ObjectNew.GetAnnotations()[v1beta1constants.GardenerOperation]
-				if operation == v1beta1constants.GardenerOperationMigrate || operation == v1beta1constants.GardenerOperationRestore {
-					// if the oldObject doesn't have the same annotation skip
-					if e.ObjectOld.GetAnnotations()[v1beta1constants.GardenerOperation] != operation {
-						return false
-					}
-				} else {
+
+				if operation != v1beta1constants.GardenerOperationMigrate && operation != v1beta1constants.GardenerOperationRestore {
+					return false
+				}
+
+				// if the oldObject doesn't have the same annotation skip
+				if e.ObjectOld.GetAnnotations()[v1beta1constants.GardenerOperation] != operation {
 					return false
 				}
 			}
@@ -177,6 +178,17 @@ func LastOperationChanged(getLastOperation func(client.Object) *gardencorev1beta
 		DeleteFunc:  func(event.DeleteEvent) bool { return false },
 		GenericFunc: func(event.GenericEvent) bool { return false },
 	}
+}
+
+// ReconciliationFinishedSuccessfully is a helper function for checking whether the last operation indicates a
+// successful reconciliation.
+func ReconciliationFinishedSuccessfully(oldLastOperation, newLastOperation *gardencorev1beta1.LastOperation) bool {
+	return oldLastOperation != nil &&
+		oldLastOperation.Type != gardencorev1beta1.LastOperationTypeDelete &&
+		oldLastOperation.State == gardencorev1beta1.LastOperationStateProcessing &&
+		newLastOperation != nil &&
+		newLastOperation.Type != gardencorev1beta1.LastOperationTypeDelete &&
+		newLastOperation.State == gardencorev1beta1.LastOperationStateSucceeded
 }
 
 func lastOperationStateFailed(lastOperation *gardencorev1beta1.LastOperation) bool {

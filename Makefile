@@ -40,6 +40,7 @@ set-permissions:
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh"
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh"
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-crds.sh"
+	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/vgopath-setup.sh"
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/set_dependency_version"
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/component_descriptor"
 	@chmod +x "$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/prepare_release"
@@ -85,8 +86,8 @@ deploy: $(SKAFFOLD) $(HELM)
 
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
-manifests: $(CONTROLLER_GEN)
-	@go generate ./config/crd/bases
+manifests: $(VGOPATH) $(CONTROLLER_GEN)
+	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) go generate ./config/crd/bases
 	@find "$(REPO_ROOT)/config/crd/bases" -name "*.yaml" -exec cp '{}' "$(REPO_ROOT)/charts/druid/charts/crds/templates/" \;
 	@controller-gen rbac:roleName=manager-role paths="./controllers/..."
 
