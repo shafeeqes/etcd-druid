@@ -441,7 +441,7 @@ func (b *stsBuilder) getBackupRestoreContainerCommandArgs() []string {
 		commandArgs = append(commandArgs, "--insecure-transport=false")
 		commandArgs = append(commandArgs, "--insecure-skip-tls-verify=false")
 		commandArgs = append(commandArgs, fmt.Sprintf("--endpoints=https://%s-local:%d", b.etcd.Name, b.clientPort))
-		commandArgs = append(commandArgs, fmt.Sprintf("--service-endpoints=https://%s:%d", druidv1alpha1.GetClientServiceName(b.etcd.ObjectMeta), b.clientPort))
+		commandArgs = append(commandArgs, fmt.Sprintf("--service-endpoints=%s", b.getServiceEndpoint()))
 	} else {
 		commandArgs = append(commandArgs, "--insecure-transport=true")
 		commandArgs = append(commandArgs, "--insecure-skip-tls-verify=true")
@@ -612,6 +612,9 @@ func (b *stsBuilder) getEtcdContainerCommandArgs() []string {
 	commandArgs := []string{"start-etcd"}
 	commandArgs = append(commandArgs, fmt.Sprintf("--backup-restore-host-port=%s-local:%d", b.etcd.Name, common.DefaultPortEtcdBackupRestore))
 	commandArgs = append(commandArgs, fmt.Sprintf("--etcd-server-name=%s-local", b.etcd.Name))
+	if b.etcd.Spec.Etcd.PeerUrlTLS != nil && b.etcd.Spec.Etcd.PeerUrlTLS.SkipClientSANVerify != nil {
+		commandArgs = append(commandArgs, fmt.Sprintf("--peer-skip-client-verify=%v", *b.etcd.Spec.Etcd.PeerUrlTLS.SkipClientSANVerify))
+	}
 
 	if b.etcd.Spec.Etcd.ClientUrlTLS == nil {
 		commandArgs = append(commandArgs, "--backup-restore-tls-enabled=false")
@@ -863,6 +866,13 @@ func (b *stsBuilder) getBackupVolume(ctx component.OperatorContext) (*corev1.Vol
 		}, nil
 	}
 	return nil, nil
+}
+
+func (b *stsBuilder) getServiceEndpoint() string {
+	if b.etcd.Spec.Etcd.ClientService.ServiceEndpoint != nil {
+		return *b.etcd.Spec.Etcd.ClientService.ServiceEndpoint
+	}
+	return fmt.Sprintf("http://%s:%d", druidv1alpha1.GetClientServiceName(b.etcd.ObjectMeta), b.clientPort)
 }
 
 func getBackupStoreProvider(etcd *druidv1alpha1.Etcd) (*string, error) {

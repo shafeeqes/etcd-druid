@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gardener/etcd-backup-restore/pkg/miscellaneous"
 	druidv1alpha1 "github.com/gardener/etcd-druid/api/v1alpha1"
 	"github.com/gardener/etcd-druid/internal/common"
 	"github.com/gardener/etcd-druid/internal/utils"
@@ -78,14 +79,14 @@ func createEtcdConfig(etcd *druidv1alpha1.Etcd) *etcdConfig {
 		EnableV2:                false,
 		QuotaBackendBytes:       getDBQuotaBytes(etcd),
 		InitialClusterToken:     defaultInitialClusterToken,
-		InitialClusterState:     defaultInitialClusterState,
+		InitialClusterState:     getClusterState(etcd),
 		InitialCluster:          prepareInitialCluster(etcd, peerScheme),
 		AutoCompactionMode:      utils.TypeDeref(etcd.Spec.Common.AutoCompactionMode, druidv1alpha1.Periodic),
 		AutoCompactionRetention: utils.TypeDeref(etcd.Spec.Common.AutoCompactionRetention, defaultAutoCompactionRetention),
 		ListenPeerUrls:          fmt.Sprintf("%s://0.0.0.0:%d", peerScheme, utils.TypeDeref(etcd.Spec.Etcd.ServerPort, common.DefaultPortEtcdPeer)),
 		ListenClientUrls:        fmt.Sprintf("%s://0.0.0.0:%d", clientScheme, utils.TypeDeref(etcd.Spec.Etcd.ClientPort, common.DefaultPortEtcdClient)),
-		AdvertisePeerUrls:       fmt.Sprintf("%s@%s@%s@%d", peerScheme, peerSvcName, etcd.Namespace, utils.TypeDeref(etcd.Spec.Etcd.ServerPort, common.DefaultPortEtcdPeer)),
-		AdvertiseClientUrls:     fmt.Sprintf("%s@%s@%s@%d", clientScheme, peerSvcName, etcd.Namespace, utils.TypeDeref(etcd.Spec.Etcd.ClientPort, common.DefaultPortEtcdClient)),
+		AdvertisePeerUrls:       preparePeerURLs(etcd, peerScheme, peerSvcName),
+		AdvertiseClientUrls:     prepareClientURLs(etcd, clientScheme, peerSvcName),
 	}
 	if peerSecurityConfig != nil {
 		cfg.PeerSecurity = *peerSecurityConfig
@@ -119,13 +120,61 @@ func getSchemeAndSecurityConfig(tlsConfig *druidv1alpha1.TLSConfig, caPath, serv
 	return "http", nil
 }
 
+func getClusterState(etcd *druidv1alpha1.Etcd) string {
+	if etcd.Spec.Etcd.InitialCluster != nil {
+		return miscellaneous.ClusterStateExisting
+	}
+	return defaultInitialClusterState
+}
+
 func prepareInitialCluster(etcd *druidv1alpha1.Etcd, peerScheme string) string {
-	domainName := fmt.Sprintf("%s.%s.%s", druidv1alpha1.GetPeerServiceName(etcd.ObjectMeta), etcd.Namespace, "svc")
-	serverPort := strconv.Itoa(int(pointer.Int32Deref(etcd.Spec.Etcd.ServerPort, common.DefaultPortEtcdPeer)))
 	builder := strings.Builder{}
-	for i := 0; i < int(etcd.Spec.Replicas); i++ {
-		podName := druidv1alpha1.GetOrdinalPodName(etcd.ObjectMeta, i)
-		builder.WriteString(fmt.Sprintf("%s=%s://%s.%s:%s,", podName, peerScheme, podName, domainName, serverPort))
+
+	if etcd.Spec.Etcd.InitialCluster != nil {
+		for _, member := range etcd.Spec.Etcd.InitialCluster {
+			for _, url := range member.URLs {
+				builder.WriteString(fmt.Sprintf("%s=%s,", member.Name, url))
+			}
+		}
+	} else {
+		domainName := fmt.Sprintf("%s.%s.%s", druidv1alpha1.GetPeerServiceName(etcd.ObjectMeta), etcd.Namespace, "svc")
+		serverPort := strconv.Itoa(int(pointer.Int32Deref(etcd.Spec.Etcd.ServerPort, common.DefaultPortEtcdPeer)))
+		for i := 0; i < int(etcd.Spec.Replicas); i++ {
+			podName := druidv1alpha1.GetOrdinalPodName(etcd.ObjectMeta, i)
+			builder.WriteString(fmt.Sprintf("%s=%s://%s.%s:%s,", podName, peerScheme, podName, domainName, serverPort))
+		}
 	}
 	return strings.Trim(builder.String(), ",")
+}
+
+func preparePeerURLs(etcd *druidv1alpha1.Etcd, peerScheme, peerSvcName string) string {
+	if etcd.Spec.Etcd.PeerURLs != nil {
+		builder := strings.Builder{}
+
+		for _, member := range etcd.Spec.Etcd.PeerURLs {
+			for _, url := range member.URLs {
+				builder.WriteString(fmt.Sprintf("%s=%s,", member.Name, url))
+			}
+		}
+
+		return strings.Trim(builder.String(), ",")
+	}
+
+	return fmt.Sprintf("%s@%s@%s@%d", peerScheme, peerSvcName, etcd.Namespace, utils.TypeDeref(etcd.Spec.Etcd.ServerPort, common.DefaultPortEtcdPeer))
+}
+
+func prepareClientURLs(etcd *druidv1alpha1.Etcd, clientScheme, peerSvcName string) string {
+	if etcd.Spec.Etcd.ClientURLs != nil {
+		builder := strings.Builder{}
+
+		for _, member := range etcd.Spec.Etcd.ClientURLs {
+			for _, url := range member.URLs {
+				builder.WriteString(fmt.Sprintf("%s=%s,", member.Name, url))
+			}
+		}
+
+		return strings.Trim(builder.String(), ",")
+	}
+
+	return fmt.Sprintf("%s@%s@%s@%d", clientScheme, peerSvcName, etcd.Namespace, utils.TypeDeref(etcd.Spec.Etcd.ClientPort, common.DefaultPortEtcdClient))
 }
