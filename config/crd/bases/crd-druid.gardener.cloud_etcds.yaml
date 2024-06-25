@@ -316,6 +316,10 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      skipClientSANVerify:
+                        description: Skip verification of SAN field in client certificate
+                          for connections.
+                        type: boolean
                       tlsCASecretRef:
                         description: SecretReference defines a reference to a secret.
                         properties:
@@ -375,6 +379,10 @@ spec:
                         description: Labels specify the labels that should be added
                           to the client service
                         type: object
+                      serviceEndpoint:
+                        description: ServiceEndpoint specifies the endpoint of the
+                          client service
+                        type: string
                     type: object
                   clientUrlTls:
                     description: ClientUrlTLS contains the ca, server TLS and client
@@ -408,6 +416,10 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      skipClientSANVerify:
+                        description: Skip verification of SAN field in client certificate
+                          for connections.
+                        type: boolean
                       tlsCASecretRef:
                         description: SecretReference defines a reference to a secret.
                         properties:
@@ -429,6 +441,25 @@ spec:
                     - serverTLSSecretRef
                     - tlsCASecretRef
                     type: object
+                  clientUrls:
+                    description: ClientURLs contain the client URL info for additional
+                      peers that needs to be added to the existing cluster.
+                    items:
+                      description: MemberInfo contains the name and URLs of the member.
+                      properties:
+                        name:
+                          description: Name is the name of the member.
+                          type: string
+                        urls:
+                          description: URLs contains the URLs of the member.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      - urls
+                      type: object
+                    type: array
                   defragmentationSchedule:
                     description: DefragmentationSchedule defines the cron standard
                       schedule for defragmentation of etcd.
@@ -444,6 +475,25 @@ spec:
                   image:
                     description: Image defines the etcd container image and tag
                     type: string
+                  initialCluster:
+                    description: InitialCluster contains the info for the initial
+                      cluster members.
+                    items:
+                      description: MemberInfo contains the name and URLs of the member.
+                      properties:
+                        name:
+                          description: Name is the name of the member.
+                          type: string
+                        urls:
+                          description: URLs contains the URLs of the member.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      - urls
+                      type: object
+                    type: array
                   metrics:
                     description: Metrics defines the level of detail for exported
                       metrics of etcd, specify 'extensive' to include histogram metrics.
@@ -485,6 +535,10 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      skipClientSANVerify:
+                        description: Skip verification of SAN field in client certificate
+                          for connections.
+                        type: boolean
                       tlsCASecretRef:
                         description: SecretReference defines a reference to a secret.
                         properties:
@@ -506,6 +560,25 @@ spec:
                     - serverTLSSecretRef
                     - tlsCASecretRef
                     type: object
+                  peerUrls:
+                    description: PeerURLs contain the peer URL info for additional
+                      peers that needs to be added to the existing cluster.
+                    items:
+                      description: MemberInfo contains the name and URLs of the member.
+                      properties:
+                        name:
+                          description: Name is the name of the member.
+                          type: string
+                        urls:
+                          description: URLs contains the URLs of the member.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - name
+                      - urls
+                      type: object
+                    type: array
                   quota:
                     anyOf:
                     - type: integer

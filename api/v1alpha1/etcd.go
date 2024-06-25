@@ -100,6 +100,9 @@ type TLSConfig struct {
 	ServerTLSSecretRef corev1.SecretReference `json:"serverTLSSecretRef"`
 	// +optional
 	ClientTLSSecretRef corev1.SecretReference `json:"clientTLSSecretRef"`
+	// Skip verification of SAN field in client certificate for connections.
+	// +optional
+	SkipClientSANVerify *bool `json:"skipClientSANVerify,omitempty"`
 }
 
 // SecretReference defines a reference to a secret.
@@ -229,6 +232,15 @@ type EtcdConfig struct {
 	// ClientService defines the parameters of the client service that a user can specify
 	// +optional
 	ClientService *ClientService `json:"clientService,omitempty"`
+	// PeerURLs contain the peer URL info for additional peers that needs to be added to the existing cluster.
+	// +optional
+	PeerURLs []MemberInfo `json:"peerUrls,omitempty"`
+	// ClientURLs contain the client URL info for additional peers that needs to be added to the existing cluster.
+	// +optional
+	ClientURLs []MemberInfo `json:"clientUrls,omitempty"`
+	// InitialCluster contains the info for the initial cluster members.
+	// +optional
+	InitialCluster []MemberInfo `json:"initialCluster,omitempty"`
 }
 
 // ClientService defines the parameters of the client service that a user can specify
@@ -239,6 +251,17 @@ type ClientService struct {
 	// Labels specify the labels that should be added to the client service
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+	// ServiceEndpoint specifies the endpoint of the client service
+	// +optional
+	ServiceEndpoint *string `json:"serviceEndpoint,omitempty"`
+}
+
+// MemberInfo contains the name and URLs of the member.
+type MemberInfo struct {
+	// Name is the name of the member.
+	Name string `json:"name"`
+	// URLs contains the URLs of the member.
+	URLs []string `json:"urls"`
 }
 
 // SharedConfig defines parameters shared and used by Etcd as well as backup-restore sidecar.
