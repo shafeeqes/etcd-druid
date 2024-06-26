@@ -29,8 +29,8 @@ func (r *Reconciler) triggerReconcileSpecFlow(ctx component.OperatorContext, etc
 	reconcileStepFns := []reconcileFn{
 		r.recordReconcileStartOperation,
 		r.ensureFinalizer,
-		r.preSyncEtcdResources,
 		r.syncEtcdResources,
+		r.preSyncEtcdResources,
 		r.updateObservedGeneration,
 		r.recordReconcileSuccessOperation,
 		// Removing the operation annotation after last operation recording seems counter-intuitive.
@@ -215,6 +215,7 @@ func (r *Reconciler) recordEtcdSpecReconcileSuspension(etcd *druidv1alpha1.Etcd,
 
 func (r *Reconciler) getOrderedOperatorsForPreSync() []component.Kind {
 	return []component.Kind{
+		component.ConfigMapKind,
 		component.StatefulSetKind,
 	}
 }
