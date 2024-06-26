@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gardener/etcd-backup-restore/pkg/miscellaneous"
 	druidv1alpha1 "github.com/gardener/etcd-druid/api/v1alpha1"
 	"github.com/gardener/etcd-druid/internal/common"
 	"github.com/gardener/etcd-druid/internal/utils"
@@ -79,7 +78,7 @@ func createEtcdConfig(etcd *druidv1alpha1.Etcd) *etcdConfig {
 		EnableV2:                false,
 		QuotaBackendBytes:       getDBQuotaBytes(etcd),
 		InitialClusterToken:     defaultInitialClusterToken,
-		InitialClusterState:     getClusterState(etcd),
+		InitialClusterState:     defaultInitialClusterState,
 		InitialCluster:          prepareInitialCluster(etcd, peerScheme),
 		AutoCompactionMode:      utils.TypeDeref(etcd.Spec.Common.AutoCompactionMode, druidv1alpha1.Periodic),
 		AutoCompactionRetention: utils.TypeDeref(etcd.Spec.Common.AutoCompactionRetention, defaultAutoCompactionRetention),
@@ -118,13 +117,6 @@ func getSchemeAndSecurityConfig(tlsConfig *druidv1alpha1.TLSConfig, caPath, serv
 		}
 	}
 	return "http", nil
-}
-
-func getClusterState(etcd *druidv1alpha1.Etcd) string {
-	if etcd.Spec.Etcd.InitialCluster != nil {
-		return miscellaneous.ClusterStateExisting
-	}
-	return defaultInitialClusterState
 }
 
 func prepareInitialCluster(etcd *druidv1alpha1.Etcd, peerScheme string) string {
