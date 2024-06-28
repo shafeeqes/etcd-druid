@@ -29,8 +29,8 @@ func (r *Reconciler) triggerReconcileSpecFlow(ctx component.OperatorContext, etc
 	reconcileStepFns := []reconcileFn{
 		r.recordReconcileStartOperation,
 		r.ensureFinalizer,
-		r.syncEtcdResources,
 		r.preSyncEtcdResources,
+		r.syncEtcdResources,
 		r.updateObservedGeneration,
 		r.recordReconcileSuccessOperation,
 		// Removing the operation annotation after last operation recording seems counter-intuitive.

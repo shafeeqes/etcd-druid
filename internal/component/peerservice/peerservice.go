@@ -72,6 +72,7 @@ func (r _resource) Sync(ctx component.OperatorContext, etcd *druidv1alpha1.Etcd)
 		buildResource(etcd, svc)
 		return nil
 	})
+
 	if err != nil {
 		return druiderr.WrapError(err,
 			ErrSyncPeerService,
