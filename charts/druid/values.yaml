@@ -1,7 +1,7 @@
 image:
-  repository: europe-docker.pkg.dev/gardener-project/public/gardener/etcd-druid
-  tag: latest
-  imagePullPolicy: IfNotPresent
+  repository: shafeeqes/etcd-druid
+  tag: v0.23.9-dev 
+  imagePullPolicy: Always
 replicas: 1
 resources:
   limits:
