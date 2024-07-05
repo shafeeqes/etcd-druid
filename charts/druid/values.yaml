@@ -1,6 +1,6 @@
 image:
   repository: shafeeqes/etcd-druid
-  tag: v0.23.9-dev 
+  tag: v0.23.10-dev 
   imagePullPolicy: Always
 replicas: 1
 resources:
