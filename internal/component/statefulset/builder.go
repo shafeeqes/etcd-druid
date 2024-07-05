@@ -876,7 +876,7 @@ func (b *stsBuilder) getBackupVolume(ctx component.OperatorContext) (*corev1.Vol
 }
 
 func (b *stsBuilder) getServiceEndpoint() string {
-	if b.etcd.Spec.Etcd.ClientService.ServiceEndpoint != nil {
+	if b.etcd.Spec.Etcd.ClientService != nil && b.etcd.Spec.Etcd.ClientService.ServiceEndpoint != nil {
 		return *b.etcd.Spec.Etcd.ClientService.ServiceEndpoint
 	}
 	return fmt.Sprintf("http://%s:%d", druidv1alpha1.GetClientServiceName(b.etcd.ObjectMeta), b.clientPort)
